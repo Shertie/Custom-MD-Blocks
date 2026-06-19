@@ -4,7 +4,12 @@
   "description": "Creating custom formatting for blocks of code inside markdown files.",
   "version": "0.1.0",
   "publisher": "JakubKosidowski",
-  "repository": {},
+  "author": "Jakub Kosidowski",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:Shertie/Custom-MD-Blocks.git"
+  },
   "engines": {
     "vscode": "^1.107.0"
   },
