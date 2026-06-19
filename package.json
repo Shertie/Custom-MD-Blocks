@@ -2,7 +2,7 @@
   "name": "custom-md-blocks",
   "displayName": "custom-md-blocks",
   "description": "Creating custom formatting for blocks of code inside markdown files.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "JakubKosidowski",
   "author": "Jakub Kosidowski",
   "icon": "assets/custom-md-blocks-icon.png",
@@ -68,6 +68,16 @@
     "configuration": {
       "title": "Custom MD Blocks",
       "properties": {
+        "customMdBlocks.pdfExportMargin": {
+          "type": "number",
+          "default": 10,
+          "description": "Margin for PDF export in mm."
+        },
+        "customMdBlocks.geminiApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API Key for Google Gemini (used for AI blocks)."
+        },
         "customMdBlocks.rules": {
           "type": "object",
           "default": {
@@ -115,6 +125,7 @@
   "dependencies": {
     "@iktakahiro/markdown-it-katex": "^4.0.1",
     "markdown-it": "^14.2.0",
-    "markdown-it-task-lists": "^2.1.1"
+    "markdown-it-task-lists": "^2.1.1",
+    "node-fetch": "^2.7.0"
   }
 }
