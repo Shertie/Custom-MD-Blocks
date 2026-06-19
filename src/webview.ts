@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import MarkdownIt = require('markdown-it');
+import markdownItKatex = require('@iktakahiro/markdown-it-katex');
+import markdownItTaskLists = require('markdown-it-task-lists');
 import { getRules } from './config';
 import { ShellSession } from './shellSession';
 import { exportToGist } from './githubGist';
@@ -16,7 +18,9 @@ export function updateWebview(activeEditor: vscode.TextEditor | undefined) {
 
     currentDocumentUri = activeEditor.document.uri;
     const text = activeEditor.document.getText();
-    const md = new MarkdownIt();
+    const md = new MarkdownIt({ html: true });
+    md.use(markdownItKatex);
+    md.use(markdownItTaskLists, { enabled: true });
     let htmlContent = md.render(text);
     const rules = getRules();
 
@@ -127,6 +131,7 @@ export function updateWebview(activeEditor: vscode.TextEditor | undefined) {
                 .success-text { color: #89d185; }
             </style>
             <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css">
             <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
             <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
             <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
@@ -206,6 +211,14 @@ export function updateWebview(activeEditor: vscode.TextEditor | undefined) {
                                 outputContainer.innerHTML += '<span class="success-text">' + message.result + '</span>';
                             }
                         }
+                    }
+                });
+
+                document.addEventListener('change', function(e) {
+                    if (e.target && e.target.classList.contains('task-list-item-checkbox')) {
+                        const checkboxes = Array.from(document.querySelectorAll('.task-list-item-checkbox'));
+                        const index = checkboxes.indexOf(e.target);
+                        vscode.postMessage({ command: 'toggleCheckbox', index: index, checked: e.target.checked });
                     }
                 });
             </script>
@@ -318,6 +331,26 @@ export function showPreviewCommand(context: vscode.ExtensionContext) {
                         exportToGist(message.code, 'script.md', false);
                         return;
                         
+                    case 'toggleCheckbox':
+                        if (!currentDocumentUri) return;
+                        const doc = await vscode.workspace.openTextDocument(currentDocumentUri);
+                        const fullText = doc.getText();
+                        let matchCount = 0;
+                        const regex = /^[\s\>]*[\*\-\+]\s+\[([ x])\]/gm;
+                        let match;
+                        while ((match = regex.exec(fullText)) !== null) {
+                            if (matchCount === message.index) {
+                                const bracketInnerPos = match.index + match[0].length - 2; 
+                                const range = new vscode.Range(doc.positionAt(bracketInnerPos), doc.positionAt(bracketInnerPos + 1));
+                                const edit = new vscode.WorkspaceEdit();
+                                edit.replace(currentDocumentUri, range, message.checked ? 'x' : ' ');
+                                await vscode.workspace.applyEdit(edit);
+                                break;
+                            }
+                            matchCount++;
+                        }
+                        return;
+
                     case 'restartSession':
                         shellSession?.restart();
                         vscode.window.showInformationMessage('Shell session restarted.');

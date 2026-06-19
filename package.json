@@ -2,9 +2,10 @@
   "name": "custom-md-blocks",
   "displayName": "custom-md-blocks",
   "description": "Creating custom formatting for blocks of code inside markdown files.",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "publisher": "JakubKosidowski",
   "author": "Jakub Kosidowski",
+  "icon": "assets/custom-md-blocks-icon.png",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -21,6 +22,12 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "languages": [
+      {
+        "id": "markdown",
+        "configuration": "./language-configuration.json"
+      }
+    ],
     "commands": [
       {
         "command": "customMdBlocks.showPreview",
@@ -30,6 +37,32 @@
       {
         "command": "customMdBlocks.importTemplate",
         "title": "Custom MD Blocks: Import Template"
+      },
+      {
+        "command": "customMdBlocks.toggleBold",
+        "title": "Custom MD Blocks: Toggle Bold"
+      },
+      {
+        "command": "customMdBlocks.toggleItalic",
+        "title": "Custom MD Blocks: Toggle Italic"
+      },
+      {
+        "command": "customMdBlocks.generateTOC",
+        "title": "Custom MD Blocks: Generate Table of Contents"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "customMdBlocks.toggleBold",
+        "key": "ctrl+b",
+        "mac": "cmd+b",
+        "when": "editorTextFocus && editorLangId == 'markdown'"
+      },
+      {
+        "command": "customMdBlocks.toggleItalic",
+        "key": "ctrl+i",
+        "mac": "cmd+i",
+        "when": "editorTextFocus && editorLangId == 'markdown'"
       }
     ],
     "configuration": {
@@ -80,6 +113,8 @@
     "typescript-eslint": "^8.56.1"
   },
   "dependencies": {
-    "markdown-it": "^14.2.0"
+    "@iktakahiro/markdown-it-katex": "^4.0.1",
+    "markdown-it": "^14.2.0",
+    "markdown-it-task-lists": "^2.1.1"
   }
 }
