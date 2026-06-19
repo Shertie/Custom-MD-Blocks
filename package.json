@@ -1,0 +1,80 @@
+{
+  "name": "custom-md-blocks",
+  "displayName": "custom-md-blocks",
+  "description": "Creating custom formatting for blocks of code inside markdown files.",
+  "version": "0.1.0",
+  "publisher": "JakubKosidowski",
+  "repository": {},
+  "engines": {
+    "vscode": "^1.107.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:markdown"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "customMdBlocks.showPreview",
+        "title": "Custom MD Blocks: Show Preview",
+        "icon": "$(open-preview)"
+      },
+      {
+        "command": "customMdBlocks.importTemplate",
+        "title": "Custom MD Blocks: Import Template"
+      }
+    ],
+    "configuration": {
+      "title": "Custom MD Blocks",
+      "properties": {
+        "customMdBlocks.rules": {
+          "type": "object",
+          "default": {
+            "tree": {
+              "symbols": {
+                "├──": "#e06c75",
+                "└──": "#98c379",
+                "│": "#56b6c2"
+              }
+            }
+          },
+          "description": "Global configuration for custom code blocks in Markdown."
+        }
+      }
+    },
+    "menus": {
+      "editor/title": [
+        {
+          "command": "customMdBlocks.showPreview",
+          "group": "navigation",
+          "when": "resourceLangId == markdown"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/markdown-it": "^14.1.2",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "@types/vscode": "^1.107.0",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2",
+    "eslint": "^9.39.3",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.1"
+  },
+  "dependencies": {
+    "markdown-it": "^14.2.0"
+  }
+}
