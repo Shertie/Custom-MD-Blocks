@@ -91,7 +91,7 @@ export class ShellSession {
             if (!interpreter) interpreter = language; // fallback to generic command
 
             // Execute the script using the interpreter via our persistent shell
-            const runCmd = `"${interpreter}" "${tempFile}"`;
+            const runCmd = isWin ? `& "${interpreter}" "${tempFile}"` : `"${interpreter}" "${tempFile}"`;
             this.process?.stdin.write(runCmd + suffix);
         });
     }

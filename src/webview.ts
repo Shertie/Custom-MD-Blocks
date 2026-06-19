@@ -9,10 +9,12 @@ import { handleMissingDependency } from './dependencyManager';
 
 let previewPanel: vscode.WebviewPanel | undefined = undefined;
 let shellSession: ShellSession | undefined = undefined;
+let currentDocumentUri: vscode.Uri | undefined = undefined;
 
 export function updateWebview(activeEditor: vscode.TextEditor | undefined) {
     if (!previewPanel || !activeEditor || activeEditor.document.languageId !== 'markdown') return;
 
+    currentDocumentUri = activeEditor.document.uri;
     const text = activeEditor.document.getText();
     const md = new MarkdownIt();
     let htmlContent = md.render(text);
@@ -22,21 +24,20 @@ export function updateWebview(activeEditor: vscode.TextEditor | undefined) {
         return `<div class="mermaid">${innerHtml.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')}</div>`;
     });
 
-    for (const [blockType, blockConfig] of Object.entries<any>(rules)) {
-        if (!blockConfig) continue;
-
-        const regex = new RegExp(`<pre><code class="language-${blockType}">([\\s\\S]*?)<\\/code><\\/pre>`, 'g');
-        htmlContent = htmlContent.replace(regex, (match: string, innerHtml: string) => {
-            let styledHtml = innerHtml;
-            const cleanTextContent = innerHtml.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
-            
-            // Check for DontRun comment
-            const isDontRun = cleanTextContent.trim().split('\n')[0].includes('DontRun');
-            if (isDontRun) {
-                // Remove the DontRun line from the visible output
-                styledHtml = styledHtml.replace(/^.*DontRun.*$(\r?\n)?/m, '');
-            }
-            
+    const regex = /<pre><code class="language-([a-zA-Z0-9_-]+)">([\s\S]*?)<\/code><\/pre>/g;
+    htmlContent = htmlContent.replace(regex, (match: string, blockType: string, innerHtml: string) => {
+        let styledHtml = innerHtml;
+        const cleanTextContent = innerHtml.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+        
+        // Check for DontRun comment
+        const isDontRun = cleanTextContent.trim().split('\n')[0].includes('DontRun');
+        if (isDontRun) {
+            // Remove the DontRun line from the visible output
+            styledHtml = styledHtml.replace(/^.*DontRun.*$(\r?\n)?/m, '');
+        }
+        
+        const blockConfig = rules[blockType];
+        if (blockConfig) {
             if (blockConfig.symbols) {
                 for (const [symbol, color] of Object.entries<string>(blockConfig.symbols)) {
                     const escapedSymbol = symbol.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
@@ -66,6 +67,7 @@ export function updateWebview(activeEditor: vscode.TextEditor | undefined) {
                     );
                 }
             }
+        }
 
             const blockId = 'block_' + Math.random().toString(36).substr(2, 9);
             
@@ -108,7 +110,6 @@ export function updateWebview(activeEditor: vscode.TextEditor | undefined) {
                 </div>
             `;
         });
-    }
 
     previewPanel.webview.html = `
         <!DOCTYPE html>
@@ -236,10 +237,29 @@ export function showPreviewCommand(context: vscode.ExtensionContext) {
             async message => {
                 switch (message.command) {
                     case 'runScript':
-                        const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-                        if (!workspaceRoot || !shellSession) return;
+                        const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || 
+                            (currentDocumentUri ? path.dirname(currentDocumentUri.fsPath) : undefined);
+                            
+                        if (!workspaceRoot || !shellSession) {
+                            previewPanel?.webview.postMessage({
+                                command: 'scriptResult',
+                                blockId: message.blockId,
+                                result: 'Error: Cannot determine workspace root or shell session.'
+                            });
+                            return;
+                        }
 
-                        const result = await shellSession.executeCodeBlock(message.code, message.language, workspaceRoot);
+                        let result = '';
+                        try {
+                            result = await shellSession.executeCodeBlock(message.code, message.language, workspaceRoot);
+                        } catch (err: any) {
+                            previewPanel?.webview.postMessage({
+                                command: 'scriptResult',
+                                blockId: message.blockId,
+                                result: `Execution Error: ${err.message || String(err)}`
+                            });
+                            return;
+                        }
                         
                         const missingModuleMatch = result.match(/ModuleNotFoundError: No module named '([^']+)'/) || 
                                                    result.match(/Error: Cannot find module '([^']+)'/);
@@ -308,7 +328,7 @@ export function showPreviewCommand(context: vscode.ExtensionContext) {
                         return;
                         
                     case 'pdfExportReady':
-                        const activeUri = vscode.window.activeTextEditor?.document.uri;
+                        const activeUri = currentDocumentUri || vscode.window.activeTextEditor?.document.uri;
                         if (activeUri) {
                             let pdfPath = activeUri.fsPath;
                             if (pdfPath.endsWith('.md')) {
