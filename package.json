@@ -2,7 +2,7 @@
   "name": "custom-md-blocks",
   "displayName": "custom-md-blocks",
   "description": "Creating custom formatting for blocks of code inside markdown files.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "JakubKosidowski",
   "author": "Jakub Kosidowski",
   "license": "MIT",
